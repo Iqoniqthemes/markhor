@@ -160,10 +160,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		templateLock: false,
 	} );
 
+	// Generate the CSS for live preview
+	const previewCss = containerCss( attributes, DARK_ENABLED );
+
 	return (
 		<Fragment>
-			<style>{ containerCss( attributes, DARK_ENABLED ) }</style>
-
 			<InspectorControls>
 				<PanelBody title={ __( 'Layout', 'markhor-block-addons' ) } initialOpen>
 					<DeviceTabs>
@@ -597,10 +598,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 			{ isBoxed ? (
 				<div { ...blockProps }>
+					{ previewCss && <style>{ previewCss }</style> }
 					<div { ...innerProps } />
 				</div>
 			) : (
-				<div { ...innerProps } />
+				<Fragment>
+					{ previewCss && <style>{ previewCss }</style> }
+					<div { ...innerProps } />
+				</Fragment>
 			) }
 		</Fragment>
 	);
