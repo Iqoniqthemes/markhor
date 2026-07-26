@@ -1,0 +1,25 @@
+# Copyright (C) 2026 MARKHOR
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: MARKHOR Block Addons 1.0.0\n"
+"Report-Msgid-Bugs-To: https://infogrokpk-ui.github.io/markhor-block-addons-doc/\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-14T00:00:00+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: manual (regenerate with: wp i18n make-pot . languages/markhor-block-addons.pot)\n"
+"X-Domain: markhor-block-addons\n"
+
+#. Plugin Name of the plugin
+msgid "MARKHOR Block Addons"
+msgstr ""
+
+#. Description of the plugin
+msgid "A collection of lightweight, customizable Gutenberg blocks — per-device layout, backgrounds, borders, spacing and light/dark colours."
+msgstr ""
+
+#. NOTE: This is a starter catalog. Regenerate the full catalog with:
+#.   wp i18n make-pot . languages/markhor-block-addons.pot
+#.   wp i18n make-json languages --no-purge

@@ -1,0 +1,54 @@
+.markhor-container {
+	box-sizing: border-box;
+
+	* {
+		box-sizing: border-box;
+	}
+}
+
+.markhor-container--full-width {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+}
+
+.markhor-container--boxed {
+	display: block;
+	width: 100%;
+}
+
+.markhor-container__inner {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 1200px;
+	width: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.markhor-container,
+	.markhor-container__inner {
+		transition: background-color 0.25s ease;
+	}
+}
+
+// Responsive visibility.
+@media (min-width: 1025px) {
+	.markhor-hide-desktop {
+		display: none !important;
+	}
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+	.markhor-hide-tablet {
+		display: none !important;
+	}
+}
+
+@media (max-width: 767px) {
+	.markhor-hide-mobile {
+		display: none !important;
+	}
+}

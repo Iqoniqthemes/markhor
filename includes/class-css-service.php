@@ -1,0 +1,234 @@
+<?php
+/**
+ * CSS service — parses a post's blocks, runs the per-block generators and
+ * caches the combined CSS in post meta (save-time cache).
+ *
+ * @package MARKHOR\Block_Addons
+ */
+
+declare( strict_types=1 );
+namespace MARKHOR\Block_Addons;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Save-time CSS generation + post-meta cache.
+ */
+class CSS_Service {
+
+	const META_CSS     = '_markhor_block_css';
+	const META_VERSION = '_markhor_block_css_version';
+
+	/**
+	 * blockName => generator class map, built from the catalog.
+	 *
+	 * @var array|null
+	 */
+	private static ?array $generators = null;
+
+	/**
+	 * Get the generator map (filterable).
+	 *
+	 * @return array [ 'markhor/container' => Generators\Container_CSS::class, … ].
+	 */
+	public static function get_generators(): array {
+		if ( null === self::$generators ) {
+			$map = array();
+			foreach ( Block_Manager::get_catalog() as $block ) {
+				if ( ! empty( $block['name'] ) && ! empty( $block['generator'] ) ) {
+					$map[ $block['name'] ] = $block['generator'];
+				}
+			}
+			/**
+			 * Filter the block → CSS generator map.
+			 *
+			 * @param array $map blockName => class with static generate( array, CSS_Builder ).
+			 */
+			self::$generators = (array) apply_filters( 'markhor_block_addons_css_generators', $map );
+		}
+		return self::$generators;
+	}
+
+	/**
+	 * Generate + cache CSS for a post. Returns the generated CSS.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string
+	 */
+	public static function generate_for_post( int $post_id ): string {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return '';
+		}
+
+		$css    = new CSS_Builder();
+		$blocks = parse_blocks( (string) $post->post_content );
+		self::walk_blocks( $blocks, $css );
+
+		$output = $css->css_output();
+		update_post_meta( $post_id, self::META_CSS, $output );
+		update_post_meta( $post_id, self::META_VERSION, MARKHOR_BLOCK_ADDONS_VER );
+
+		return $output;
+	}
+
+	/**
+	 * Recursively run generators over a parsed block tree.
+	 *
+	 * @param array       $blocks Parsed blocks.
+	 * @param CSS_Builder $css    Shared builder.
+	 * @return void
+	 */
+	private static function walk_blocks( array $blocks, CSS_Builder $css ): void {
+		$generators = self::get_generators();
+
+		foreach ( $blocks as $block ) {
+			$name = $block['blockName'] ?? '';
+
+			if ( isset( $generators[ $name ] ) && class_exists( $generators[ $name ] ) ) {
+				$attrs = self::merged_attributes( $name, (array) ( $block['attrs'] ?? array() ) );
+
+				// blockId enters CSS selectors — sanitise once for every generator.
+				if ( isset( $attrs['blockId'] ) ) {
+					$attrs['blockId'] = sanitize_html_class( (string) $attrs['blockId'] );
+				}
+
+				try {
+					call_user_func( array( $generators[ $name ], 'generate' ), $attrs, $css );
+				} catch ( \Throwable $e ) {
+					// One failing block must not abort the rest or the save.
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+							sprintf( '[MARKHOR Block Addons] CSS generator failed for %s: %s', $name, $e->getMessage() )
+						);
+					}
+				}
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				self::walk_blocks( $block['innerBlocks'], $css );
+			}
+		}
+	}
+
+	/**
+	 * Merge saved attrs over the registered block.json defaults so generators
+	 * always see the full attribute shape.
+	 *
+	 * @param string $block_name Block name.
+	 * @param array  $attrs      Saved attributes.
+	 * @return array
+	 */
+	private static function merged_attributes( string $block_name, array $attrs ): array {
+		$type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+		if ( ! $type || empty( $type->attributes ) ) {
+			return $attrs;
+		}
+		$defaults = array();
+		foreach ( $type->attributes as $key => $schema ) {
+			if ( is_array( $schema ) && array_key_exists( 'default', $schema ) ) {
+				$defaults[ $key ] = $schema['default'];
+			}
+		}
+		return self::merge_deep( $defaults, $attrs );
+	}
+
+	/**
+	 * Recursive merge — saved values win, missing keys fall back to defaults.
+	 * Lists (sequential arrays) are replaced, not merged.
+	 *
+	 * @param array $defaults Defaults.
+	 * @param array $values   Saved values.
+	 * @return array
+	 */
+	private static function merge_deep( array $defaults, array $values ): array {
+		foreach ( $values as $key => $value ) {
+			if (
+				is_array( $value ) &&
+				isset( $defaults[ $key ] ) && is_array( $defaults[ $key ] ) &&
+				! array_is_list( $value )
+			) {
+				$defaults[ $key ] = self::merge_deep( $defaults[ $key ], $value );
+			} else {
+				$defaults[ $key ] = $value;
+			}
+		}
+		return $defaults;
+	}
+
+	/**
+	 * Cached CSS for a post ('' when none).
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string
+	 */
+	public static function get_post_css( int $post_id ): string {
+		return (string) get_post_meta( $post_id, self::META_CSS, true );
+	}
+
+	/**
+	 * Whether the cached CSS was generated by an older plugin version.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	public static function needs_regeneration( int $post_id ): bool {
+		return get_post_meta( $post_id, self::META_VERSION, true ) !== MARKHOR_BLOCK_ADDONS_VER;
+	}
+
+	/**
+	 * Whether the post contains any of our blocks.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	public static function has_blocks( int $post_id ): bool {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return false;
+		}
+		foreach ( array_keys( self::get_generators() ) as $name ) {
+			if ( has_block( $name, $post ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Remove cached CSS for one post.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return void
+	 */
+	public static function clear_cache( int $post_id ): void {
+		delete_post_meta( $post_id, self::META_CSS );
+		delete_post_meta( $post_id, self::META_VERSION );
+	}
+
+	/**
+	 * Remove cached CSS site-wide (used when settings change, e.g. dark mode
+	 * toggled). Pages regenerate lazily on next view/save.
+	 *
+	 * @return void
+	 */
+	public static function flush_all_cache(): void {
+		delete_post_meta_by_key( self::META_CSS );
+		delete_post_meta_by_key( self::META_VERSION );
+	}
+}
+
+// PHP < 8.1 polyfill for array_is_list().
+if ( ! function_exists( 'array_is_list' ) ) {
+	/**
+	 * Polyfill.
+	 *
+	 * @param array $arr Array.
+	 * @return bool
+	 */
+	function array_is_list( array $arr ): bool { // phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed
+		return array() === $arr || array_keys( $arr ) === range( 0, count( $arr ) - 1 );
+	}
+}

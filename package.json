@@ -1,0 +1,25 @@
+{
+	"name": "markhor-block-addons",
+	"version": "1.0.0",
+	"description": "MARKHOR Block Addons — lightweight, customizable Gutenberg blocks.",
+	"author": "MARKHOR",
+	"license": "GPL-2.0-or-later",
+	"scripts": {
+		"build": "wp-scripts build --webpack-copy-php --source-path=src/blocks --output-path=build/blocks",
+		"start": "wp-scripts start --webpack-copy-php --source-path=src/blocks --output-path=build/blocks",
+		"lint:js": "wp-scripts lint-js src",
+		"lint:css": "wp-scripts lint-style src",
+		"plugin-zip": "wp-scripts plugin-zip"
+	},
+	"files": [
+		"markhor-block-addons.php",
+		"uninstall.php",
+		"readme.txt",
+		"includes/**",
+		"build/**",
+		"languages/**"
+	],
+	"devDependencies": {
+		"@wordpress/scripts": "^30.0.0"
+	}
+}
