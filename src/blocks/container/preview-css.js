@@ -89,10 +89,12 @@ export function containerCss( attributes, darkEnabled = false ) {
 	const styled = isBoxed ? outer + ' > .markhor-container__inner' : outer;
 	let css = '';
 
+	// Build CSS for each device breakpoint
 	DEVICES.forEach( ( device ) => {
 		let styledDecl = '';
 		let outerDecl = '';
 
+		// LAYOUT CONTROL: Display, Direction, Justify, Align, Wrap, Gap
 		const layout = ( attributes.layout || {} )[ device ] || {};
 		if ( layout.display ) {
 			styledDecl += 'display:' + layout.display + ';';
@@ -117,6 +119,7 @@ export function containerCss( attributes, darkEnabled = false ) {
 			styledDecl += 'row-gap:' + withUnit( gap.row, gap.unit ) + ';';
 		}
 
+		// SPACING CONTROL: Padding & Margin
 		const spacing = ( attributes.spacing || {} )[ device ] || {};
 		if ( spacing.padding ) {
 			const p = shorthand( spacing.padding, [ 'top', 'right', 'bottom', 'left' ], spacing.padding.unit );
@@ -131,6 +134,7 @@ export function containerCss( attributes, darkEnabled = false ) {
 			}
 		}
 
+		// WIDTH CONTROL: Max-width (boxed) or Width (full-width)
 		const width = isBoxed
 			? ( attributes.widthBoxed || {} )[ device ] || {}
 			: ( attributes.widthFullWidth || {} )[ device ] || {};
@@ -141,6 +145,7 @@ export function containerCss( attributes, darkEnabled = false ) {
 			}
 		}
 
+		// MIN-HEIGHT CONTROL
 		const mh = ( ( attributes.size || {} )[ device ] || {} ).minHeight || {};
 		if ( mh.value ) {
 			const h = withUnit( mh.value, mh.unit || 'px' );
@@ -149,6 +154,7 @@ export function containerCss( attributes, darkEnabled = false ) {
 			}
 		}
 
+		// BORDER CONTROL: Style, Width, Color, Radius
 		const border = ( attributes.border || {} )[ device ] || {};
 		if ( border.style ) {
 			styledDecl += 'border-style:' + border.style + ';';
@@ -170,6 +176,7 @@ export function containerCss( attributes, darkEnabled = false ) {
 			}
 		}
 
+		// ADVANCED LAYOUT CONTROL: Z-index, Overflow, Position
 		const adv = ( attributes.advancedLayout || {} )[ device ] || {};
 		if ( '' !== String( adv.zIndex || '' ) ) {
 			styledDecl += 'z-index:' + parseFloat( adv.zIndex ) + ';';
@@ -179,6 +186,16 @@ export function containerCss( attributes, darkEnabled = false ) {
 		}
 		if ( adv.position ) {
 			styledDecl += 'position:' + adv.position + ';';
+		}
+
+		// RESPONSIVE VISIBILITY CONTROL: Hide on specific breakpoints
+		const visibility = attributes.responsiveVisibility || {};
+		if ( 'desktop' === device && visibility.hideOnDesktop ) {
+			styledDecl += 'display:none !important;';
+		} else if ( 'tablet' === device && visibility.hideOnTablet ) {
+			styledDecl += 'display:none !important;';
+		} else if ( 'mobile' === device && visibility.hideOnMobile ) {
+			styledDecl += 'display:none !important;';
 		}
 
 		let block = '';
@@ -193,21 +210,27 @@ export function containerCss( attributes, darkEnabled = false ) {
 		}
 	} );
 
-	// Background + box-shadow (base). Preview loads images eagerly.
+	// BACKGROUND CONTROL: Color, Gradient, Image + Box Shadow
 	const bg = attributes.background || {};
 	let bgDecl = '';
+
+	// Background color
 	if ( 'color' === bg.type || 'classic' === bg.type ) {
 		const c = pair( bg.color, 'light' );
 		if ( c ) {
 			bgDecl += 'background-color:' + c + ';';
 		}
 	}
+
+	// Background gradient
 	if ( 'gradient' === bg.type ) {
 		const g = pair( bg.gradient, 'light' );
 		if ( g ) {
 			bgDecl += 'background-image:' + g + ';';
 		}
 	}
+
+	// Background image
 	if ( 'image' === bg.type ) {
 		const img = bg.image || {};
 		const uc = pair( bg.color, 'light' );
@@ -230,32 +253,44 @@ export function containerCss( attributes, darkEnabled = false ) {
 			bgDecl += 'background-attachment:' + img.attachment + ';';
 		}
 	}
+
+	// BOX SHADOW CONTROL
 	const shadow = boxShadowValue( attributes.boxShadow );
 	if ( shadow ) {
 		bgDecl += 'box-shadow:' + shadow + ';';
 	}
+
 	if ( bgDecl ) {
 		css += styled + '{' + bgDecl + '}';
 	}
 
-	// Dark-mode preview (prefers-color-scheme mirror).
+	// DARK MODE SUPPORT: Dark versions of background, border, shadow
 	if ( darkEnabled ) {
 		let darkDecl = '';
+
+		// Dark background color
 		if ( 'color' === bg.type || 'classic' === bg.type || 'image' === bg.type ) {
 			const dc = pair( bg.color, 'dark' );
 			if ( dc ) {
 				darkDecl += 'background-color:' + dc + ';';
 			}
-		} else if ( 'gradient' === bg.type ) {
+		}
+
+		// Dark gradient
+		if ( 'gradient' === bg.type ) {
 			const dg = pair( bg.gradient, 'dark' );
 			if ( dg ) {
 				darkDecl += 'background-image:' + dg + ';';
 			}
 		}
+
+		// Dark border color
 		const dBorder = pair( ( ( attributes.border || {} ).desktop || {} ).color, 'dark' );
 		if ( dBorder ) {
 			darkDecl += 'border-color:' + dBorder + ';';
 		}
+
+		// Dark box shadow
 		const dShadowColor = pair( ( attributes.boxShadow || {} ).color, 'dark' );
 		if ( dShadowColor ) {
 			const dsh = boxShadowValue( attributes.boxShadow, dShadowColor );
@@ -263,6 +298,7 @@ export function containerCss( attributes, darkEnabled = false ) {
 				darkDecl += 'box-shadow:' + dsh + ';';
 			}
 		}
+
 		if ( darkDecl ) {
 			css += '@media (prefers-color-scheme: dark){' + styled + '{' + darkDecl + '}}';
 		}

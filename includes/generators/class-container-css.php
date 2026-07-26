@@ -58,7 +58,7 @@ class Container_CSS {
 		foreach ( self::$devices as $device ) {
 			CSS_Helpers::open_device( $css, $device );
 
-			// Flex layout.
+			// LAYOUT: Display, Direction, Justify, Align, Wrap, Gap.
 			$layout = $attrs['layout'][ $device ] ?? array();
 			if ( ! empty( $layout ) ) {
 				$css->set_selector( $styled );
@@ -89,7 +89,7 @@ class Container_CSS {
 				}
 			}
 
-			// Spacing: padding on styled, margin on outer.
+			// SPACING: Padding on styled, margin on outer.
 			$spacing = $attrs['spacing'][ $device ] ?? array();
 			if ( ! empty( $spacing['padding'] ) && is_array( $spacing['padding'] ) ) {
 				$p = CSS_Helpers::spacing_shorthand( $spacing['padding'] );
@@ -104,7 +104,7 @@ class Container_CSS {
 				}
 			}
 
-			// Width: max-width (boxed) or width (full-width).
+			// WIDTH: Max-width (boxed) or width (full-width).
 			$width = $is_boxed ? ( $attrs['widthBoxed'][ $device ] ?? array() ) : ( $attrs['widthFullWidth'][ $device ] ?? array() );
 			if ( ! empty( $width['value'] ) ) {
 				$css->set_selector( $styled )->add_property(
@@ -113,30 +113,38 @@ class Container_CSS {
 				);
 			}
 
-			// Min-height.
+			// MIN-HEIGHT.
 			$mh = $attrs['size'][ $device ]['minHeight'] ?? array();
 			if ( ! empty( $mh['value'] ) ) {
 				$css->set_selector( $styled )->add_property( 'min-height', CSS_Helpers::with_unit( $mh['value'], $mh['unit'] ?? 'px' ) );
 			}
 
-			// Border.
+			// BORDER: Style, width, color, radius.
 			$border = $attrs['border'][ $device ] ?? array();
 			if ( ! empty( $border ) ) {
 				$css->set_selector( $styled );
 				CSS_Helpers::add_border( $css, $border );
 			}
 
-			// Advanced layout (z-index / overflow / position).
+			// ADVANCED LAYOUT: Z-index / overflow / position.
 			$adv = $attrs['advancedLayout'][ $device ] ?? array();
 			if ( ! empty( $adv ) ) {
 				$css->set_selector( $styled );
 				CSS_Helpers::add_advanced_layout( $css, $adv );
 			}
 
+			// RESPONSIVE VISIBILITY: Hide on specific breakpoints.
+			$visibility = $attrs['responsiveVisibility'] ?? array();
+			if ( ( 'desktop' === $device && ! empty( $visibility['hideOnDesktop'] ) ) ||
+				( 'tablet' === $device && ! empty( $visibility['hideOnTablet'] ) ) ||
+				( 'mobile' === $device && ! empty( $visibility['hideOnMobile'] ) ) ) {
+				$css->set_selector( $styled )->add_property( 'display', 'none', true );
+			}
+
 			CSS_Helpers::close_device( $css, $device );
 		}
 
-		// Background + box-shadow (base).
+		// BACKGROUND + BOX-SHADOW (base).
 		$bg      = is_array( $attrs['background'] ?? null ) ? $attrs['background'] : array();
 		$lazy_bg = ! empty( $bg['lazyLoad'] ) && 'image' === ( $bg['type'] ?? 'none' ) && '' !== ( $bg['image']['url'] ?? '' );
 		if ( ! empty( $bg ) ) {
@@ -152,7 +160,7 @@ class Container_CSS {
 			$css->set_selector( $styled )->add_property( 'box-shadow', $shadow );
 		}
 
-		// Dark mode: background / border / shadow colours.
+		// DARK MODE: Background / border / shadow colours.
 		CSS_Helpers::add_dark_mode(
 			$css,
 			$styled,
