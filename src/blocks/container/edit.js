@@ -2,7 +2,7 @@
  * Container block — editor UI. Inspector panels with device tabs plus a live
  * <style> preview built by preview-css.js (JS mirror of the PHP generator).
  */
-import { useEffect, Fragment } from '@wordpress/element';
+import { useEffect, useRef, Fragment } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import {
 	InspectorControls,
@@ -89,9 +89,37 @@ const BoxControls = ( { label, box = {}, keys, keyLabels, onChange } ) => (
 	</BaseControl>
 );
 
+/**
+ * Generate a unique ID for the container.
+ * Format: mkhr-{random}-{timestamp}
+ */
+function generateUniqueId() {
+	const random = Math.random().toString( 36 ).substr( 2, 9 );
+	const timestamp = Date.now().toString( 36 );
+	return `mkhr-${ random }-${ timestamp }`;
+}
+
 export default function Edit( { attributes, setAttributes, clientId } ) {
+	const previousClientIdRef = useRef( clientId );
+
 	useEffect( () => {
-		if ( ! attributes.blockId ) {
+		// Check if the block was duplicated (clientId changed) or is new (no uniqueId).
+		const clientIdChanged = previousClientIdRef.current !== clientId;
+		const isNewBlock = ! attributes.uniqueId;
+
+		if ( isNewBlock || clientIdChanged ) {
+			// Generate a new unique ID for:
+			// 1. New blocks being created
+			// 2. Duplicated blocks (clientId changes when duplicating)
+			setAttributes( { uniqueId: generateUniqueId() } );
+			previousClientIdRef.current = clientId;
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ clientId ] );
+
+	// Maintain backward compatibility: if blockId exists but uniqueId doesn't, use blockId.
+	useEffect( () => {
+		if ( ! attributes.blockId && ! attributes.uniqueId ) {
 			setAttributes( { blockId: clientId.slice( 0, 8 ) } );
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps

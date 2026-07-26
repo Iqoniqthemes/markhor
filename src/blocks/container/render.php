@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use MARKHOR\Block_Addons\HTML_Helpers;
 
+$unique_id      = $attributes['uniqueId'] ?? '';
 $block_id       = $attributes['blockId'] ?? '';
 $container_type = $attributes['containerType'] ?? 'boxed';
 $anchor         = $attributes['anchor'] ?? '';
@@ -31,9 +32,15 @@ if ( '' !== $block_id ) {
 $classes = HTML_Helpers::build_wrapper_classes( $classes, $attributes );
 
 $wrapper_args = array( 'class' => implode( ' ', $classes ) );
-if ( $anchor ) {
+
+// Use unique ID on the wrapper element for ID-based selectors.
+if ( '' !== $unique_id ) {
+	$wrapper_args['id'] = sanitize_html_class( $unique_id );
+} elseif ( $anchor ) {
+	// Fallback: use anchor as ID if no uniqueId (backward compatibility).
 	$wrapper_args['id'] = sanitize_html_class( $anchor );
 }
+
 $wrapper    = get_block_wrapper_attributes( $wrapper_args );
 $data_attrs = HTML_Helpers::build_data_attrs( $attributes );
 

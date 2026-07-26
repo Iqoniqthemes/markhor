@@ -69,18 +69,23 @@ export function boxShadowValue( sh, colorOverride ) {
 
 /**
  * Build the per-instance preview CSS for one Container.
+ * Uses uniqueId for ID-based selectors, with fallback to blockId for backward compatibility.
  *
  * @param {Object}  attributes  Block attributes.
  * @param {boolean} darkEnabled Whether dark-mode preview rules are emitted.
  * @return {string} CSS.
  */
 export function containerCss( attributes, darkEnabled = false ) {
-	const id = attributes.blockId;
+	// Prefer uniqueId (new ID-based approach), fall back to blockId (legacy class-based).
+	const id = attributes.uniqueId || attributes.blockId;
 	if ( ! id ) {
 		return '';
 	}
+
 	const isBoxed = 'boxed' === ( attributes.containerType || 'boxed' );
-	const outer = '.markhor-container-' + id;
+	// Use ID selector (#) for uniqueId, class selector (.) for blockId (backward compat).
+	const selector = attributes.uniqueId ? '#' : '.markhor-container-';
+	const outer = attributes.uniqueId ? '#' + id : '.markhor-container-' + id;
 	const styled = isBoxed ? outer + ' > .markhor-container__inner' : outer;
 	let css = '';
 

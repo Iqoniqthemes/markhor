@@ -20,6 +20,7 @@
   "attributes": {
     "isExamplePreview": { "type": "boolean", "default": false },
     "blockId": { "type": "string", "default": "" },
+    "uniqueId": { "type": "string", "default": "" },
     "htmlTag": { "type": "string", "default": "div" },
     "containerType": { "type": "string", "default": "boxed", "enum": ["boxed", "full-width"] },
     "layout": {
@@ -52,7 +53,7 @@
     "border": {
       "type": "object",
       "default": {
-        "desktop": { "style": "", "width": { "top": "", "right": "", "bottom": "", "left": "", "unit": "px" }, "color": { "light": "", "dark": "" }, "radius": { "topLeft": "", "topRight": "", "bottomRight": "", "bottomLeft": "", "unit": "px" } },
+        "desktop": { "style": "", "width": { "top": "", "right": "", "bottom": "", "left": "", "unit": "px" }, "color": { "light": "", "dark": "" }, "radius": { "topLeft": "", "topRight": "", "bottomRight": "", "bottomLeft": "" } },
         "tablet": {}, "mobile": {}
       }
     },

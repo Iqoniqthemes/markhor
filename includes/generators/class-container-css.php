@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Walks desktop → tablet → mobile emitting layout, spacing, width,
  * min-height, border and advanced layout; then background + box-shadow and a
  * dark-mode branch.
+ *
+ * Uses uniqueId for ID-based selectors, with fallback to blockId for backward compatibility.
  */
 class Container_CSS {
 
@@ -32,18 +34,25 @@ class Container_CSS {
 	/**
 	 * Generate CSS for one Container instance.
 	 *
-	 * @param array       $attrs Merged block attributes (blockId pre-sanitised).
+	 * @param array       $attrs Merged block attributes (uniqueId/blockId pre-sanitised).
 	 * @param CSS_Builder $css   Shared builder.
 	 * @return void
 	 */
 	public static function generate( array $attrs, CSS_Builder $css ): void {
-		$id = $attrs['blockId'] ?? '';
+		// Prefer uniqueId (ID-based), fall back to blockId (class-based for backward compat).
+		$id = $attrs['uniqueId'] ?? '';
+		if ( '' === $id ) {
+			$id = $attrs['blockId'] ?? '';
+		}
 		if ( '' === $id ) {
 			return;
 		}
 
+		// Determine selector type based on which ID is being used.
+		$is_unique_id = ! empty( $attrs['uniqueId'] );
+		$outer        = $is_unique_id ? '#' . $id : '.markhor-container-' . $id;
+
 		$is_boxed = 'boxed' === ( $attrs['containerType'] ?? 'boxed' );
-		$outer    = '.markhor-container-' . $id;
 		$styled   = $is_boxed ? $outer . ' > .markhor-container__inner' : $outer;
 
 		foreach ( self::$devices as $device ) {
